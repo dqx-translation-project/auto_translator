@@ -1,0 +1,4 @@
+alive-progress
+deepl
+python-dotenv
+requests
