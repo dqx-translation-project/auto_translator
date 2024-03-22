@@ -146,13 +146,25 @@ def sanitize_text(text: str) -> str:
         output = output.replace(alignment, "")
 
     # trim multiple ellipses to a single one
-    ellipses = ["…………………………………………", "………………………………………", "……………………………………", "…………………………………", "………………………………", "……………………………", "…………………………", "………………………", "……………………", "…………………", "………………", "……………", "…………", "………", "……"]
+    ellipses = [
+        "…………………………………………",
+        "………………………………………",
+        "……………………………………",
+        "…………………………………",
+        "………………………………",
+        "……………………………",
+        "…………………………",
+        "………………………",
+        "……………………",
+        "…………………",
+        "………………",
+        "……………",
+        "…………",
+        "………",
+        "……"
+    ]
     for ellipse in ellipses:
         output = output.replace(ellipse, "…")
-
-    ellipses_period = ["…。"]
-    for ellipse_period in ellipses_period:
-        output = output.replace(ellipse_period, "… ")
 
     # remove any other oddities that don't look great in english
     oddities = ["「"]
@@ -165,7 +177,10 @@ def sanitize_text(text: str) -> str:
     # replace any <color*> tags with & as they are part of the string
     output = output.replace("<color_", "<&color_")
 
-    name_tags = ["<pc>", "<cs_pchero>", "<kyodai>"]
+    # swap positions of <%sM_OWNER> (name) & <%sM_SAMA> (master)
+    output = output.replace("<%sM_OWNER><%sM_SAMA>", "<%sM_SAMA><%sM_OWNER>")
+
+    name_tags = ["<pc>", "<cs_pchero>", "<kyodai>", "<%sM_NAME>", "<%sM_BEFORE_NAME>", "<%sM_OWNER_OTHER>", "<%sM_OWNER>"]
 
     # removes all of the honorifics added at the end of the tags
     honorifics = ["さま", "君", "どの", "ちゃん", "くん", "様", "さーん", "殿", "さん",]
@@ -264,6 +279,7 @@ def sanitize_text(text: str) -> str:
         str_text = str_text.replace("............", "...")
         str_text = str_text.replace(".........", "...")
         str_text = str_text.replace("......", "...")
+        str_text = str_text.replace("....", "...")
 
         updated_str = normalize_text(str_text)
         updated_str = updated_str.replace("<&color_", "<color_")  # put our color tag back.
@@ -306,6 +322,7 @@ def swap_placeholder_tags(text: str, swap_back=False) -> str:
         text = text.replace("<kyodai_rel3>", "<&7_ac>")
         text = text.replace("<pc_hometown>", "<&8_aab>")
         text = text.replace("<pc_race>", "<&8_aac>")
+        text = text.replace("<%sM_real_race>", "<&8_aad>")
         text = text.replace("<pc_rel1>", "<&7_ad>")
         text = text.replace("<pc_rel2>", "<&7_ae>")
         text = text.replace("<pc_rel3>", "<&7_af>")
@@ -324,6 +341,11 @@ def swap_placeholder_tags(text: str, swap_back=False) -> str:
         text = text.replace("<pc_syokugyo>", "<&13_aaaaaah>")
         text = text.replace("<pc_original>", "<&13_aaaaaai>")
         text = text.replace("<log_pc>", "<&13_aaaaaaj>")
+        text = text.replace("<%sM_NAME>", "<&13_aaaaaak>")
+        text = text.replace("<%sM_BEFORE_NAME>", "<&13_aaaaaal>")
+        text = text.replace("<%sM_OWNER_OTHER>", "<&13_aaaaaam>")
+        text = text.replace("<%sM_OWNER>", "<&13_aaaaaan>")
+        text = text.replace("<%sM_SAMA>", "<&6_a>")
         text = text.replace("<1st_title>", "<&20_aaaaaaaaaaaaaa>")
         text = text.replace("<2nd_title>", "<&20_aaaaaaaaaaaaab>")
         text = text.replace("<3rd_title>", "<&20_aaaaaaaaaaaaac>")
@@ -347,6 +369,7 @@ def swap_placeholder_tags(text: str, swap_back=False) -> str:
         text = text.replace("<&7_ac>", "<kyodai_rel3>")
         text = text.replace("<&8_aab>", "<pc_hometown>")
         text = text.replace("<&8_aac>", "<pc_race>")
+        text = text.replace("<&8_aad>", "<%sM_real_race>")
         text = text.replace("<&7_ad>", "<pc_rel1>")
         text = text.replace("<&7_ae>", "<pc_rel2>")
         text = text.replace("<&7_af>", "<pc_rel3>")
@@ -379,6 +402,19 @@ def swap_placeholder_tags(text: str, swap_back=False) -> str:
         text = text.replace("<&13_aaaaaaaj>", "<log_pc>")
         text = text.replace("<&13_aaaaaaj>", "<log_pc>")
         text = text.replace("<&13_aaaaaj>", "<log_pc>")
+        text = text.replace("<&13_aaaaaaak>", "<%sM_NAME>")
+        text = text.replace("<&13_aaaaaak>", "<%sM_NAME>")
+        text = text.replace("<&13_aaaaak>", "<%sM_NAME>")
+        text = text.replace("<&13_aaaaaaal>", "<%sM_BEFORE_NAME>")
+        text = text.replace("<&13_aaaaaal>", "<%sM_BEFORE_NAME>")
+        text = text.replace("<&13_aaaaal>", "<%sM_BEFORE_NAME>")
+        text = text.replace("<&13_aaaaaaam>", "<%sM_OWNER_OTHER>")
+        text = text.replace("<&13_aaaaaam>", "<%sM_OWNER_OTHER>")
+        text = text.replace("<&13_aaaaam>", "<%sM_OWNER_OTHER>")
+        text = text.replace("<&13_aaaaaaan>", "<%sM_OWNER>")
+        text = text.replace("<&13_aaaaaan>", "<%sM_OWNER>")
+        text = text.replace("<&13_aaaaan>", "<%sM_OWNER>")
+        text = text.replace("<&6_a>", "<%sM_SAMA>")
         text = text.replace("<&20_aaaaaaaaaaaaaaa>", "<1st_title>")
         text = text.replace("<&20_aaaaaaaaaaaaaa>", "<1st_title>")
         text = text.replace("<&20_aaaaaaaaaaaaa>", "<1st_title>")
