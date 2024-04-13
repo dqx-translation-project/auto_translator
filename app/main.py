@@ -194,9 +194,12 @@ def sanitize_text(text: str) -> str:
     # remove any other oddities that don't look great in english
     # "「" is commonly used to start a quote, but it doesn't always return well when passing through NMT
     # "。" is a Japanese period, but we're seeing unwanted behavior when mixing other characters with it
-    oddities = ["「", "。"]
+    oddities = ["「"]
     for oddity in oddities:
         output = output.replace(oddity, "")
+
+    # "。" is a Japanese period, but we're seeing unwanted behavior when mixing other characters with it
+    output = output.replace("。", ".")
 
     # remove the full width space that starts on a new line
     output = output.replace("\n　", "\n")
