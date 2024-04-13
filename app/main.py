@@ -75,7 +75,6 @@ def translate(text: str) -> str:
     """Sends text to deepl to be translated.
 
     :param text: Text to send to DeepL.
-    :param glossary_id: Glossary id to use when translating.
 
     :returns: Translated text.
     """
