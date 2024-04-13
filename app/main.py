@@ -22,22 +22,61 @@ def load_env():
     load_dotenv()
 
     DEEPL_KEYS = [ x for x in json.loads(os.environ["DEEPL_KEYS"]) if x ]
-    GLOSSARY = requests.get(GITHUB_CLARITY_GLOSSARY_URL)
+    tmp_glossary = requests.get(GITHUB_CLARITY_GLOSSARY_URL)
     if not DEEPL_KEYS:
         print("Provide at least one key in DEEPL_KEYS.")
         sys.exit(1)
-    if GLOSSARY.status_code != 200:
+    if tmp_glossary.status_code != 200:
         print("Did not get 200 from Github glossary URL.")
         sys.exit(1)
-    GLOSSARY = [ x for x in GLOSSARY.content.decode().split("\n") if x ]
+    tmp_glossary = [ x for x in tmp_glossary.content.decode().split("\n") if x ]
+
+    GLOSSARY = {}
+    for record in tmp_glossary:
+        key = record.split(",")[0]
+        value = record.split(",")[1]
+        GLOSSARY[key] = value
+
+    # until we remove this from our glossary.csv file, these need to be manually removed
+    GLOSSARY.pop('と言われた。', None)
+    GLOSSARY.pop('と頼まれた。', None)
+
+
+def delete_and_create_glossaries():
+    """Creates a new glossary for each API key to be used on DeepL's side.
+    This deletes any existing glossaries associated with the key!
+
+    This returns a dict of key:GlossaryInfo.
+    GlossaryInfo is an object returned from DeepL's create_glossary API.
+    """
+    global GLOSSARY_IDS
+    GLOSSARY_IDS = {}
+    for api_key in DEEPL_KEYS:
+        translator = deepl.Translator(api_key)
+        glossaries = translator.list_glossaries()
+        for glossary in glossaries:
+            print(f"Deleting glossary {glossary._glossary_id}")
+            translator.delete_glossary(glossary)
+
+        response = translator.create_glossary(
+            name="DQX Glossary",
+            source_lang="JA",
+            target_lang="EN",
+            entries=GLOSSARY
+        )
+
+        print(f"Created glossary  {response._glossary_id}")
+        GLOSSARY_IDS[api_key] = response
+
+    return GLOSSARY_IDS
 
 
 def translate(text: str) -> str:
     """Sends text to deepl to be translated.
 
     :param text: Text to send to DeepL.
-    :param xml_handling: Whether to tell DeepL to use xml_handling when
-        handling tags.
+    :param glossary_id: Glossary id to use when translating.
+
     :returns: Translated text.
     """
     api_key = random.choice(DEEPL_KEYS)
@@ -47,8 +86,10 @@ def translate(text: str) -> str:
         text=text,
         source_lang="ja",
         target_lang="en-us",
-        preserve_formatting=True
+        preserve_formatting=True,
+        glossary=GLOSSARY_IDS[api_key]
     )
+
     text_results = []
     for result in response:
         text_results.append(result.text)
@@ -74,21 +115,6 @@ def get_remaining_keys_all():
     for key in DEEPL_KEYS:
         remaining = get_remaining_limit(key)
         print(f"Key {key[0:5]}.. has {remaining} remaining characters.")
-
-
-def glossary_replace(text: str) -> str:
-    """Does a find/replace of all strings in the glossary against a target
-    string.
-
-    :param text: String that is parsed against the glossary with.
-    :returns: A new string that has been passed through the glossary.
-    """
-    for record in GLOSSARY:
-        k, v = record.split(",", 1)
-        if v == "\"\"":  # check for glossary entries that have blank strings and re-assign
-            v = ""
-        text = text.replace(k, v)
-    return text
 
 
 def add_line_endings(text: str) -> str:
@@ -167,7 +193,9 @@ def sanitize_text(text: str) -> str:
         output = output.replace(ellipse, "…")
 
     # remove any other oddities that don't look great in english
-    oddities = ["「"]
+    # "「" is commonly used to start a quote, but it doesn't always return well when passing through NMT
+    # "。" is a Japanese period, but we're seeing unwanted behavior when mixing other characters with it
+    oddities = ["「", "。"]
     for oddity in oddities:
         output = output.replace(oddity, "")
 
@@ -190,9 +218,6 @@ def sanitize_text(text: str) -> str:
 
     # replace all variable name tags that expand to other text
     output = swap_placeholder_tags(output)
-
-    # pass string through our glossary to replace any common words
-    output = glossary_replace(output)
 
     # re-assign this string. this is now our "pristine" string we'll be using later.
     pristine_str = output
@@ -463,6 +488,7 @@ def estimate_characters(data: dict) -> int:
 
 if __name__ == "__main__":
     load_env()
+    delete_and_create_glossaries()
 
     for file in glob.glob("files/*"):
         get_remaining_keys_all()
