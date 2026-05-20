@@ -1,1 +1,7 @@
 DEEPL_KEYS = []
+TRANSLATE_SERVICE = deepl
+TRANSLATE_KEY = ""
+CHATGPT_MODEL = gpt-4o-mini
+OLLAMA_URL = http://localhost:11434
+OLLAMA_MODEL = llama3
+LIBRETRANSLATE_URL = https://libretranslate.com
